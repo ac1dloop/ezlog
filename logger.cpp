@@ -7,7 +7,7 @@ namespace L {
 	}
 
 	Logger::Logger(const string& filename) {
-		m_file.open(filename, std::ios_base::trunc);
+		m_file.open(filename, std::ios_base::app);
 	}
 
 	Logger::~Logger() {
@@ -15,7 +15,7 @@ namespace L {
 	}
 
 	void Logger::open(const string& filename) {
-		m_file.open(filename, std::ios_base::trunc);
+		m_file.open(filename, std::ios_base::app);
 	}
 
 	void Logger::close() {
