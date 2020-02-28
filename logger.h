@@ -60,89 +60,60 @@ namespace L {
 		~Logger();
 
 		/* open requested file */
-		void open(const string& filename);
+        void open(const string& filename="output.log");
 
 		/* just close file */
 		void close();
 
-		/* write to file and flush only when receive LogFlush */
-		template<LogType T>
-		Logger& operator<<(LogFlush<T> lf) {
+        /* write to file and flush only when receive LogFlush */
+        template<LogType T>
+        Logger& operator<<(LogFlush<T> lf) {
 
-			if (!m_mutex.try_lock_for(std::chrono::seconds(5))) {
-				return *this;
-			}
+            if (!m_mutex.try_lock_for(std::chrono::seconds(5))) {
+                return *this;
+            }
 
-			lock_guard<std::timed_mutex> lg(m_mutex, std::adopt_lock);
+            lock_guard<std::timed_mutex> lg(m_mutex, std::adopt_lock);
 
-			if (!m_file)
-				return *this;
+            if (!m_file)
+                return *this;
 
-			/* in future need to make customizable time format */
-			auto now = std::chrono::system_clock::now();
-			auto now_time = std::chrono::system_clock::to_time_t(now);
+            /* in future need to make customizable time format */
+            auto now = std::chrono::system_clock::now();
+            auto now_time = std::chrono::system_clock::to_time_t(now);
 
-			m_file << std::put_time(std::localtime(&now_time), "%d.%m.%Y %X");
-			m_file << ' ';
+            m_file << std::put_time(std::localtime(&now_time), "%d.%m.%Y %X");
+            m_file << ' ' << '[' << lf.strType() << "] ";
 
-			for (; !m_queue.empty() && m_file;) {
+            for (; !m_queue.empty() && m_file;) {
 
-				m_file << '[' << lf.strType() << "] " << m_queue.front() << '\n';
+                m_file << m_queue.front() << ' ';
 
-				m_queue.pop();
-			}
+                m_queue.pop();
+            }
 
-			m_file.flush();
+            m_file << '\n';
+            m_file.flush();
 
-			return *this;
-		}
+            return *this;
+        }
 
-		/* try to convert value and safe it */
-		/* TODO add more to_string overloads for standard library */
-		/* TODO rework to_string so it will be more flexible */
-		template<typename T>
-		Logger& operator<<(T val) {
+        /* try to convert value and safe it */
+        /* TODO add more to_string overloads for standard library */
+        /* TODO rework to_string so it will be more flexible */
+        template<typename T>
+        Logger& operator<<(T val) {
 
-			if (!m_mutex.try_lock_for(std::chrono::seconds(5))) {
-				return *this;
-			}
+            if (!m_mutex.try_lock_for(std::chrono::seconds(5))) {
+                return *this;
+            }
 
-			lock_guard<std::timed_mutex> lg(m_mutex, std::adopt_lock);
+            lock_guard<std::timed_mutex> lg(m_mutex, std::adopt_lock);
 
-			m_queue.push(std::to_string(std::forward<T>(val)));
+            m_queue.push(std::to_string(std::forward<T>(val)));
 
-			return *this;
-		}
-
-		/* overload because to_string not accepting strings */
-		template<>
-		Logger& operator<<(const string& val) {
-
-			if (!m_mutex.try_lock_for(std::chrono::seconds(5))) {
-				return *this;
-			}
-
-			lock_guard<std::timed_mutex> lg(m_mutex, std::adopt_lock);
-
-			m_queue.push(val);
-
-			return *this;
-		}
-
-		/* overload to use string literals */
-		template<>
-		Logger& operator<<(const char* val) {
-
-			if (!m_mutex.try_lock_for(std::chrono::seconds(5))) {
-				return *this;
-			}
-
-			lock_guard<std::timed_mutex> lg(m_mutex, std::adopt_lock);
-
-			m_queue.push(string(val));
-
-			return *this;
-		}
+            return *this;
+        }
 
 
 	private:
@@ -151,4 +122,12 @@ namespace L {
 		queue<string> m_queue; //queue will be written to file on flush
 	};
 
+    template<> Logger& Logger::operator<<(const string& val);
+    template<> Logger& Logger::operator<<(const char* val);
+    template<> Logger& Logger::operator<<(char c);
+
 } //LOGGER namespace
+
+#define Flush L::Info();
+#define FlushCrit L::Crit();
+#define FlushWarn L::Warn();

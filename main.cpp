@@ -2,43 +2,57 @@
 #include <thread>
 #include "logger.h"
 
-static L::Logger Log("asd.txt");
+static L::Logger Log;
 
 int main(int argc, char** argv) {
 
-	Log << 100 << "hello" << "world";
+    Log.open();
 
-	Log << L::Info();
 
-	std::thread th([]() {
+    Log << "Log opened without errors. received argc " << argc << Flush;
+    Log << "Program successfully started" << Flush;
 
-		for (int i = 0; i < 100; ++i) {
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
-			Log << "in thread 1" << L::Warn();
+    Log << "Error occured in execution" << FlushCrit;
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(400));
-		}
+    Log << "Finished program" << Flush;
 
-	});
+    Log.close();
 
-	std::thread det([]() {
+//	Log << 100 << "hello" << "world";
 
-		for (int i=0;;++i) {
+//    Log << Flush;
 
-			Log << "hi from thread 2";
+//	std::thread th([]() {
 
-			if (i % 5 == 0)
-				Log << L::Crit();
+//		for (int i = 0; i < 100; ++i) {
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(500));
-		}
+//            Log << "in thread 1" << Flush;
 
-	});
+//            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+//		}
 
-	if (det.joinable())
-		det.detach();
+//	});
 
-	th.join();
+//	std::thread det([]() {
+
+//		for (int i=0;;++i) {
+
+//			Log << "hi from thread 2";
+
+//			if (i % 5 == 0)
+//                Log << Flush;
+
+//			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+//		}
+
+//	});
+
+//	if (det.joinable())
+//		det.detach();
+
+//	th.join();
 
 	return 0;
 }
