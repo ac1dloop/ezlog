@@ -1,27 +1,50 @@
-#include "logger.h"
+#include <logger.hpp>
 
 namespace L {
 
-	Logger::Logger() {
-	}
+    Logger::Logger() {
+    }
 
-	Logger::Logger(const string& filename) {
+    Logger::Logger(const string& filename):m_filename(filename) {
         m_file.open(filename, std::ios_base::trunc);
-	}
+    }
 
-	Logger::~Logger() {
-		m_file.close();
-	}
+    Logger::~Logger() {
+        m_file.close();
+    }
 
-	void Logger::open(const string& filename) {
+    void Logger::open(const string& filename) {
         if (m_file)
             m_file.close();
 
-		m_file.open(filename, std::ios_base::app);
-	}
+        m_filename=filename;
 
-	void Logger::close() {
-		m_file.close();
+        m_file.open(filename, std::ios_base::app);
+    }
+
+    void Logger::create(const string &filename){
+        if (m_file)
+            m_file.close();
+
+        m_filename=filename;
+
+        m_file.open(filename, std::ios_base::trunc);
+    }
+
+    void Logger::logCout(bool b){
+        m_logCout=b;
+    }
+
+    void Logger::close() {
+        m_file.close();
+    }
+
+    void Logger::recreate(){
+    }
+
+    template<>
+    Logger& Logger::operator<<(string val) {
+        return this->operator<<<const string&>(const_cast<const string&>(val));
     }
 
     /* overload because to_string not accepting strings */
@@ -37,6 +60,11 @@ namespace L {
         m_queue.push(val);
 
         return *this;
+    }
+
+    template<>
+    Logger& Logger::operator<<(char* val) {
+        return this->operator<<<const char*>(const_cast<const char*>(val));
     }
 
     /* overload to use string literals */
@@ -66,6 +94,11 @@ namespace L {
         m_queue.push(string(1, c));
 
         return *this;
+    }
+
+    Logger& getInstance(){
+        static L::Logger inst;
+        return inst;
     }
 
 } //LOGGER namespace
